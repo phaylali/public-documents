@@ -2,6 +2,11 @@
   "name": "public-documents",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun run index.bun.ts",
+    "build": "echo 'No build step needed - TypeScript compiled at runtime'",
+    "deploy": "npx wrangler pages deploy . --project-name=public-documents"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

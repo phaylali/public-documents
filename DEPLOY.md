@@ -6,6 +6,15 @@ This guide explains how to deploy the Omniversify File Explorer to Cloudflare Pa
 
 Cloudflare Pages deployment is super simple and takes less than 2 minutes!
 
+## Build Configuration
+
+The project is now configured with:
+- **Build command**: `npm run build` (no-op, TypeScript compiled at runtime)
+- **Deploy command**: `npx wrangler pages deploy`
+- **Main entry**: `index.ts`
+
+These are defined in `package.json` and `wrangler.toml`.
+
 ## Why Cloudflare Pages?
 
 - ✅ **Native Hono Support** - Works perfectly with Hono framework
