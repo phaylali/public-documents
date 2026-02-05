@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { serveStatic } from 'hono/bun';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import {
@@ -11,48 +12,15 @@ import {
     createImageViewer,
     createTextViewer,
     createFallbackViewer,
-} from './ui/omniversify.js';
+} from './ui/omniversify';
 
 const app = new Hono();
 
-// Serve static files - Vercel compatible
-app.get('/static/:filename', async (c) => {
-    const filename = c.req.param('filename');
-    const filePath = join(process.cwd(), 'files', filename);
-
-    try {
-        const file = await readFile(filePath);
-        const ext = extname(filename).toLowerCase();
-
-        // Set appropriate content type
-        const contentTypes: Record<string, string> = {
-            '.pdf': 'application/pdf',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.webp': 'image/webp',
-            '.svg': 'image/svg+xml',
-            '.txt': 'text/plain',
-            '.md': 'text/markdown',
-            '.html': 'text/html',
-            '.css': 'text/css',
-            '.js': 'application/javascript',
-            '.json': 'application/json',
-        };
-
-        const contentType = contentTypes[ext] || 'application/octet-stream';
-
-        return new Response(file, {
-            headers: {
-                'Content-Type': contentType,
-                'Content-Disposition': `inline; filename="${filename}"`,
-            },
-        });
-    } catch (err: any) {
-        return c.text('File not found', 404);
-    }
-});
+// Serve static files from the /files directory
+app.use('/static/*', serveStatic({
+    root: './',
+    rewriteRequestPath: (path) => path.replace(/^\/static/, '/files')
+}));
 
 // Home route: List all files
 app.get('/', async (c) => {
@@ -111,5 +79,8 @@ app.get('/view/:filename', async (c) => {
     return c.html(createLayout({ title: filename, content }));
 });
 
-// Export for Vercel
-export default app.fetch;
+// Export for Bun
+export default {
+    port: 3000,
+    fetch: app.fetch,
+};
