@@ -2,6 +2,9 @@
     "name": "public-documents",
     "main": "index.ts", // Point to your entry file
     "compatibility_date": "2026-02-05", // Use today's date for latest features
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
     "observability": {
         "enabled": true
     }
