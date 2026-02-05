@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
-import { readdir, readFile } from 'node:fs/promises';
-import { join, extname } from 'node:path';
+import { extname } from 'node:path';
 import {
     createLayout,
     createBreadcrumb,
@@ -13,85 +12,64 @@ import {
     createFallbackViewer,
 } from './ui/omniversify';
 
+// Import manifest (generated at build time)
+// @ts-ignore
+import manifest from './files-manifest.json' with { type: 'json' };
+
 const app = new Hono();
 
-// Serve static files
-app.get('/static/:filename', async (c) => {
-    const filename = c.req.param('filename');
-    const filePath = join(process.cwd(), 'files', filename);
-
+// Home route: List all files from manifest
+app.get('/', (c) => {
     try {
-        const file = await readFile(filePath);
-        const ext = extname(filename).toLowerCase();
+        // Use imported manifest instead of readdir
+        const entries = manifest as Array<{ name: string, isDirectory: boolean }>;
 
-        const contentTypes: Record<string, string> = {
-            '.pdf': 'application/pdf',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.webp': 'image/webp',
-            '.svg': 'image/svg+xml',
-            '.txt': 'text/plain',
-            '.md': 'text/markdown',
-            '.html': 'text/html',
-            '.css': 'text/css',
-            '.js': 'application/javascript',
-            '.json': 'application/json',
-        };
-
-        const contentType = contentTypes[ext] || 'application/octet-stream';
-
-        return new Response(file, {
-            headers: {
-                'Content-Type': contentType,
-                'Content-Disposition': `inline; filename="${filename}"`,
-            },
-        });
-    } catch (err: any) {
-        return c.text('File not found', 404);
-    }
-});
-
-// Home route: List all files
-app.get('/', async (c) => {
-    try {
-        const filesDir = join(process.cwd(), 'files');
-        const entries = await readdir(filesDir, { withFileTypes: true });
-
+        // Generate file cards
         const cards = entries.map(entry =>
             createFileCard({
                 name: entry.name,
-                link: entry.isDirectory() ? '#' : `/view/${entry.name}`,
-                isDirectory: entry.isDirectory()
+                link: entry.isDirectory ? '#' : `/view/${entry.name}`,
+                isDirectory: entry.isDirectory
             })
         );
 
+        // Compose the page content
         const content = createBreadcrumb(['EXPLORER', 'HOME']) + createFileGrid(cards);
 
         return c.html(createLayout({ title: 'Home', content }));
     } catch (err: any) {
-        const errorContent = `<p>Error reading files directory: ${err.message}</p>`;
-        return c.html(createLayout({ title: 'Error', content: errorContent }));
+        return c.html(createLayout({ title: 'Error', content: `<p>Error loading file manifest: ${err.message}</p>` }));
     }
 });
 
 // File viewer route
 app.get('/view/:filename', async (c) => {
     const filename = c.req.param('filename');
-    const filePath = join(process.cwd(), 'files', filename);
     const ext = extname(filename).toLowerCase();
-    const staticUrl = `/static/${filename}`;
+
+    // In Pages, files are served as static assets
+    // We construct the URL to the static asset
+    const staticUrl = `/files/${filename}`;
 
     let viewerHtml = '';
 
+    // Determine viewer type based on file extension
     if (ext === '.pdf') {
         viewerHtml = createPDFViewer({ filename, staticUrl });
     } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
         viewerHtml = createImageViewer({ filename, staticUrl });
     } else if (['.txt', '.md', '.json', '.ts', '.js', '.html', '.css'].includes(ext)) {
         try {
-            const content = await readFile(filePath, 'utf-8');
+            // Fetch content from the static URL
+            const url = new URL(c.req.url);
+            const fetchUrl = `${url.origin}/files/${filename}`;
+            const response = await fetch(fetchUrl);
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch file: ${response.statusText}`);
+            }
+
+            const content = await response.text();
             viewerHtml = createTextViewer({ content, filename, staticUrl });
         } catch (err: any) {
             viewerHtml = `<p>Error reading file content: ${err.message}</p>`;
@@ -100,6 +78,7 @@ app.get('/view/:filename', async (c) => {
         viewerHtml = createFallbackViewer({ filename, staticUrl });
     }
 
+    // Compose the page content
     const content = createBreadcrumb(['<a href="/">EXPLORER</a>', filename.toUpperCase()]) +
         createViewerContainer(viewerHtml);
 

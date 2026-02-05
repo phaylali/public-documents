@@ -3,8 +3,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun run index.bun.ts",
-    "build": "echo 'No build step needed - TypeScript compiled at runtime'",
+    "dev": "bun run scripts/generate-manifest.ts && bun run index.bun.ts",
+    "build": "bun run scripts/generate-manifest.ts",
     "deploy": "npx wrangler pages deploy . --project-name=public-documents"
   },
   "devDependencies": {
