@@ -1,0 +1,13 @@
+{
+  "name": "public-documents",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "hono": "^4.11.7"
+  }
+}
