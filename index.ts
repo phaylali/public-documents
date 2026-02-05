@@ -12,20 +12,58 @@ import {
     createFallbackViewer,
 } from './ui/omniversify';
 
-// Import manifest (generated at build time)
+// Import bundled manifest (generated at build time)
 // @ts-ignore
 import manifest from './files-manifest.json' with { type: 'json' };
 
+interface BundledFile {
+    name: string;
+    isDirectory: boolean;
+    content?: string;
+    type: 'text' | 'binary';
+    size: number;
+    mime: string;
+}
+
 const app = new Hono();
 
-// Home route: List all files from manifest
+const fileMap = new Map<string, BundledFile>();
+(manifest as BundledFile[]).forEach(file => {
+    fileMap.set(file.name, file);
+});
+
+// Serve bundled files via virtual path
+app.get('/files/:filename', (c) => {
+    const filename = c.req.param('filename');
+    const file = fileMap.get(filename);
+
+    if (!file || file.isDirectory) {
+        return c.text('File not found', 404);
+    }
+
+    if (file.type === 'text') {
+        return c.text(file.content || '', 200, {
+            'Content-Type': file.mime
+        });
+    } else {
+        // Binary (Base64)
+        const binaryString = atob(file.content || '');
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        return c.body(bytes, 200, {
+            'Content-Type': file.mime,
+            'Content-Disposition': `inline; filename="${filename}"`
+        });
+    }
+});
+
+// Home route: List all files
 app.get('/', (c) => {
     try {
-        // Use imported manifest instead of readdir
-        const entries = manifest as Array<{ name: string, isDirectory: boolean }>;
-
-        // Generate file cards
-        const cards = entries.map(entry =>
+        const cards = (manifest as BundledFile[]).map(entry =>
             createFileCard({
                 name: entry.name,
                 link: entry.isDirectory ? '#' : `/view/${entry.name}`,
@@ -33,24 +71,27 @@ app.get('/', (c) => {
             })
         );
 
-        // Compose the page content
         const content = createBreadcrumb(['EXPLORER', 'HOME']) + createFileGrid(cards);
-
         return c.html(createLayout({ title: 'Home', content }));
     } catch (err: any) {
-        return c.html(createLayout({ title: 'Error', content: `<p>Error loading file manifest: ${err.message}</p>` }));
+        return c.html(createLayout({ title: 'Error', content: `<p>Error loading files: ${err.message}</p>` }));
     }
 });
 
 // File viewer route
-app.get('/view/:filename', async (c) => {
+app.get('/view/:filename', (c) => {
     const filename = c.req.param('filename');
-    const ext = extname(filename).toLowerCase();
+    const file = fileMap.get(filename);
 
-    // In Pages, files are served as static assets
-    // We construct the URL to the static asset
+    if (!file) {
+        return c.html(createLayout({
+            title: 'Not Found',
+            content: createBreadcrumb(['EXPLORER', 'ERROR']) + '<p>File not found.</p>'
+        }));
+    }
+
     const staticUrl = `/files/${filename}`;
-
+    const ext = extname(filename).toLowerCase();
     let viewerHtml = '';
 
     // Determine viewer type based on file extension
@@ -58,27 +99,16 @@ app.get('/view/:filename', async (c) => {
         viewerHtml = createPDFViewer({ filename, staticUrl });
     } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
         viewerHtml = createImageViewer({ filename, staticUrl });
-    } else if (['.txt', '.md', '.json', '.ts', '.js', '.html', '.css'].includes(ext)) {
-        try {
-            // Fetch content from the static URL
-            const url = new URL(c.req.url);
-            const fetchUrl = `${url.origin}/files/${filename}`;
-            const response = await fetch(fetchUrl);
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch file: ${response.statusText}`);
-            }
-
-            const content = await response.text();
-            viewerHtml = createTextViewer({ content, filename, staticUrl });
-        } catch (err: any) {
-            viewerHtml = `<p>Error reading file content: ${err.message}</p>`;
-        }
+    } else if (file.type === 'text') { // Use type from bundle
+        viewerHtml = createTextViewer({
+            content: file.content || '',
+            filename,
+            staticUrl
+        });
     } else {
         viewerHtml = createFallbackViewer({ filename, staticUrl });
     }
 
-    // Compose the page content
     const content = createBreadcrumb(['<a href="/">EXPLORER</a>', filename.toUpperCase()]) +
         createViewerContainer(viewerHtml);
 
