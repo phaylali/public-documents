@@ -1,6 +1,6 @@
 # Omniversify File Explorer
 
-[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/YOUR_USERNAME/YOUR_REPO_NAME)
+[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/phaylali/public-documents)
 
 A premium, OLED-optimized file explorer built with **Hono** and **Bun**.
 
