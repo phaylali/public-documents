@@ -1,8 +1,7 @@
 # Omniversify File Explorer
 
-[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/phaylali/public-documents)
-
 A premium, OLED-optimized file explorer built with **Hono** and **Bun**.
+
 
 ## Features
 - **OLED Dark Mode**: Pure black background with Gold accents (#C2B067).

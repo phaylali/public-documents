@@ -2,20 +2,9 @@
 
 This guide explains how to deploy the Omniversify File Explorer to Cloudflare Pages (recommended - fast and free!).
 
-## 🚀 Quick Deploy (One-Click)
+## 🚀 Quick Deploy
 
-Once you've pushed your code to GitHub, click this button:
-
-[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/phaylali/public-documents)
-
-**Important:** Replace `YOUR_USERNAME/YOUR_REPO_NAME` with your actual GitHub repository path in both:
-- The deploy button URL in `README.md`
-- The deploy button URL in `DEPLOY.md`
-
-Example: If your repo is `https://github.com/john/public-docs`, use:
-```markdown
-[![Deploy to Cloudflare Pages](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/phaylali/public-documents)
-```
+Cloudflare Pages deployment is super simple and takes less than 2 minutes!
 
 ## Why Cloudflare Pages?
 
