@@ -8,7 +8,8 @@
     "deploy": "npx wrangler pages deploy . --project-name=public-documents"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "wrangler": "^4.63.0"
   },
   "peerDependencies": {
     "typescript": "^5"
