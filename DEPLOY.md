@@ -1,18 +1,14 @@
-# Deploying to Vercel
+# Deploying to Cloudflare Pages
 
-This guide explains how to deploy the Omniversify File Explorer to Vercel.
+This guide explains how to deploy the Omniversify File Explorer to Cloudflare Pages (recommended - fast and free!).
 
-## Important Notes
+## Why Cloudflare Pages?
 
-- **Vercel uses Node.js**, not Bun, so we've created a Vercel-compatible version
-- The main `index.ts` is now Vercel-compatible
-- For local Bun development, use `index.bun.ts`
-
-## Files Configured for Vercel
-
-1. **package.json** - Added `"type": "module"` for ES module support
-2. **vercel.json** - Vercel deployment configuration
-3. **index.ts** - Vercel-compatible entry point (no Bun-specific code)
+- ✅ **Native Hono Support** - Works perfectly with Hono framework
+- ✅ **Fast Deployment** - Builds in seconds, not minutes
+- ✅ **Free Tier** - Generous free tier with unlimited bandwidth
+- ✅ **Global CDN** - Fast worldwide
+- ✅ **No Configuration Needed** - Auto-detects everything
 
 ## Deployment Steps
 
@@ -26,54 +22,72 @@ git remote add origin <your-repo-url>
 git push -u origin main
 ```
 
-### 2. Deploy on Vercel
+### 2. Deploy on Cloudflare Pages
 
-1. Go to [vercel.com](https://vercel.com)
-2. Click "New Project"
-3. Import your Git repository
-4. Vercel will auto-detect the settings
-5. Click "Deploy"
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com)
+2. Click **Workers & Pages** → **Create Application** → **Pages**
+3. Connect your Git repository (GitHub/GitLab)
+4. Configure build settings:
+   - **Framework preset**: None
+   - **Build command**: Leave empty (or `echo "No build needed"`)
+   - **Build output directory**: `/`
+   - **Root directory**: `/`
+5. Click **Save and Deploy**
 
-### 3. Upload Files
+### 3. Environment Variables (Optional)
 
-Since the `/files` directory contains your documents, you'll need to:
-- Commit the `/files` directory to Git, OR
-- Use Vercel's file upload feature, OR
-- Use a cloud storage solution (S3, Cloudflare R2, etc.)
+No environment variables needed for basic setup!
 
 ## Local Development
 
-### With Bun (Recommended for local dev)
+### With Bun (Recommended)
 
 ```bash
 bun run index.bun.ts
 ```
 
-### With Node.js (Testing Vercel compatibility)
+Visit `http://localhost:3000`
+
+### With Wrangler (Cloudflare's CLI - for testing)
 
 ```bash
-npm install
-node index.ts
+npm install -g wrangler
+wrangler pages dev index.ts
 ```
 
-## Differences Between Versions
+## File Structure
 
-| Feature | index.bun.ts | index.ts (Vercel) |
-|---------|--------------|-------------------|
-| Runtime | Bun | Node.js |
-| Static Files | `serveStatic` from `hono/bun` | Custom handler |
-| Export | `{ port: 3000, fetch }` | `app.fetch` |
-| File Serving | Built-in | Manual with content-type headers |
+```
+├── index.ts              # Main app (Cloudflare compatible)
+├── index.bun.ts          # Bun version for local dev
+├── ui/
+│   └── omniversify.ts    # UI library
+├── files/                # Your documents (will be deployed)
+└── package.json
+```
 
 ## Troubleshooting
 
-### "Cannot use import statement outside a module"
-- ✅ Fixed by adding `"type": "module"` to package.json
+### Build taking too long?
+- Cloudflare Pages builds are typically under 30 seconds
+- No TypeScript compilation needed - Cloudflare handles it
 
-### Static files not loading
-- Ensure `/files` directory is included in your deployment
-- Check that file paths are correct in Vercel's serverless environment
+### Files not showing up?
+- Ensure `/files` directory is committed to Git
+- Check that file paths are correct
 
-### Build errors
-- Make sure all imports use `.js` extensions for ES modules
-- Verify that `ui/omniversify.ts` is being compiled correctly
+### Want to use a custom domain?
+- Go to your Pages project → **Custom domains**
+- Add your domain and follow DNS instructions
+
+## Alternative: Cloudflare Workers
+
+For even more control, you can deploy as a Cloudflare Worker:
+
+```bash
+npm install -g wrangler
+wrangler init
+wrangler deploy
+```
+
+But Pages is simpler and recommended for this use case!

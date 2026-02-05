@@ -11,11 +11,11 @@ import {
     createImageViewer,
     createTextViewer,
     createFallbackViewer,
-} from './ui/omniversify.js';
+} from './ui/omniversify';
 
 const app = new Hono();
 
-// Serve static files - Vercel compatible
+// Serve static files
 app.get('/static/:filename', async (c) => {
     const filename = c.req.param('filename');
     const filePath = join(process.cwd(), 'files', filename);
@@ -24,7 +24,6 @@ app.get('/static/:filename', async (c) => {
         const file = await readFile(filePath);
         const ext = extname(filename).toLowerCase();
 
-        // Set appropriate content type
         const contentTypes: Record<string, string> = {
             '.pdf': 'application/pdf',
             '.jpg': 'image/jpeg',
@@ -60,7 +59,6 @@ app.get('/', async (c) => {
         const filesDir = join(process.cwd(), 'files');
         const entries = await readdir(filesDir, { withFileTypes: true });
 
-        // Generate file cards
         const cards = entries.map(entry =>
             createFileCard({
                 name: entry.name,
@@ -69,7 +67,6 @@ app.get('/', async (c) => {
             })
         );
 
-        // Compose the page content
         const content = createBreadcrumb(['EXPLORER', 'HOME']) + createFileGrid(cards);
 
         return c.html(createLayout({ title: 'Home', content }));
@@ -88,7 +85,6 @@ app.get('/view/:filename', async (c) => {
 
     let viewerHtml = '';
 
-    // Determine viewer type based on file extension
     if (ext === '.pdf') {
         viewerHtml = createPDFViewer({ filename, staticUrl });
     } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
@@ -104,12 +100,11 @@ app.get('/view/:filename', async (c) => {
         viewerHtml = createFallbackViewer({ filename, staticUrl });
     }
 
-    // Compose the page content
     const content = createBreadcrumb(['<a href="/">EXPLORER</a>', filename.toUpperCase()]) +
         createViewerContainer(viewerHtml);
 
     return c.html(createLayout({ title: filename, content }));
 });
 
-// Export for Vercel
-export default app.fetch;
+// Export for Cloudflare Pages
+export default app;
